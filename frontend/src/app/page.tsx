@@ -20,7 +20,7 @@ export default async function Home() {
             <h2 className="font-semibold">{movie.title}</h2>
             <p className="text-sm">{movie.description}</p>
             <p className="text-xs text-gray-500">
-              {movie.genres.join(', ')} - {movie.release_year}
+              {movie.genres.join(', ')} - {movie.release_date}
             </p>
           </div>
         ))}
