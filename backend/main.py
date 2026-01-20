@@ -1,7 +1,6 @@
 from fastapi import FastAPI
+from recommendations import router as rec_router
 
 app = FastAPI()
 
-@app.get("/")
-def health():
-    return {"status": "ok"}
+app.include_router(rec_router)
