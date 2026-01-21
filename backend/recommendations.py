@@ -1,11 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from supabase import create_client
 from dotenv import load_dotenv
+load_dotenv()
+
 import os
+import numpy as np
+import ast
 
-load_dotenv()  # IMPORTANT
-
-router = APIRouter(prefix="/recommendations")
+router = APIRouter()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -14,79 +16,82 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def parse_embedding(embedding):
+    """
+    Supabase returns pgvector as a string like:
+    '[0.012, 0.34, ...]'
+    Convert it to List[float]
+    """
+    if isinstance(embedding, list):
+        return embedding
+    if isinstance(embedding, str):
+        return list(map(float, ast.literal_eval(embedding)))
+    raise ValueError("Invalid embedding format")
+
 @router.get("/{user_id}")
 def get_recommendations(user_id: str):
-    print(user_id)
+    try:
+        # 1. Fetch user's high ratings
+        ratings = (
+            supabase.table("ratings")
+            .select("movie_id")
+            .eq("user_id", user_id)
+            .gte("rating", 4)
+            .execute()
+            .data
+        )
 
-    # 1. Fetch user ratings
-    ratings_res = supabase.table("ratings") \
-        .select("movie_id, rating") \
-        .filter("user_id", "eq", user_id) \
-        .execute()
-    
-    print(ratings_res.data)
+        if not ratings:
+            return []
 
-    if not ratings_res.data:
-        return []
+        movie_ids = [r["movie_id"] for r in ratings]
 
-    rated_movie_ids = {r["movie_id"] for r in ratings_res.data}
+        # 2. Fetch embeddings
+        embeddings = (
+            supabase.table("movie_embeddings")
+            .select("embedding")
+            .in_("movie_id", movie_ids)
+            .execute()
+            .data
+        )
 
-    # 2. Fetch movies user rated highly (>= 4)
-    liked_ids = [
-        r["movie_id"]
-        for r in ratings_res.data
-        if r["rating"] >= 4
-    ]
+        if not embeddings:
+            return []
 
-    if not liked_ids:
-        return []
+        # 3. Average embedding
+        vectors = [parse_embedding(e["embedding"]) for e in embeddings]
+        user_vector = np.mean(vectors, axis=0).tolist()
 
-    liked_movies = supabase.table("movies") \
-        .select("genres") \
-        .in_("id", liked_ids) \
-        .execute() \
-        .data
+        # 4. Vector similarity search
+        matches = (
+            supabase.rpc(
+                "match_movies",
+                {
+                    "query_embedding": user_vector,
+                    "match_count": 20
+                }
+            )
+            .execute()
+            .data
+        )
 
-    # 3. Build preferred genre set
-    preferred_genres = set()
-    for movie in liked_movies:
-        if movie["genres"]:
-            for g in movie["genres"]:
-                preferred_genres.add(g.strip().lower())
+        if not matches:
+            return []
 
-    # 4. Fetch candidate movies (unrated)
-    movies = supabase.table("movies") \
-        .select("id, title, poster_path, genres, popularity") \
-        .execute() \
-        .data
+        movie_ids = [m["movie_id"] for m in matches]
 
-    scored = []
+        # 5. Fetch movie metadata
+        movies = (
+            supabase.table("movies")
+            .select("*")
+            .in_("id", movie_ids)
+            .execute()
+            .data
+        )
 
-    for movie in movies:
-        if movie["id"] in rated_movie_ids:
-            continue
+        return movies
 
-        score = 0
-
-        if movie["genres"]:
-            movie_genres = {
-                g.strip().lower()
-                for g in movie["genres"]
-            }
-            score += len(movie_genres & preferred_genres) * 2
-
-        score += movie.get("popularity", 0) * 0.01
-
-        if score > 0:
-            scored.append((score, movie))
-
-    # 5. Sort & return top results
-    scored.sort(reverse=True, key=lambda x: x[0])
-
-    return [
-    {
-        "score": score,
-        "movie": movie
-    }
-    for score, movie in scored[:20]
-    ]
+    except Exception as e:
+        print("ERROR:", e)
+        raise HTTPException(status_code=500, detail=str(e))

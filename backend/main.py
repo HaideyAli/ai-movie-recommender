@@ -1,6 +1,15 @@
 from fastapi import FastAPI
-from recommendations import router as rec_router
+from fastapi.middleware.cors import CORSMiddleware
+from recommendations import router as recommendations_router
 
 app = FastAPI()
 
-app.include_router(rec_router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(recommendations_router, prefix="/recommendations")
