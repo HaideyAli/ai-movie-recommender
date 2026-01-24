@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Movie } from '@/types/movie';
 import Image from 'next/image';
 import StarRating from '@/components/StarRating';
+import MovieCard from '@/components/MovieCard';
 
 const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
 
@@ -12,13 +13,20 @@ export default function Home() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+
 
   // Ratings: key = movie.id (string), value = rating number
   const [ratings, setRatings] = useState<Record<string, number>>({});
 
   const unratedMovies = movies.filter(
-    (movie) => ratings[movie.id] === undefined
+      (movie, index, self) =>
+        ratings[movie.id] === undefined &&
+        index === self.findIndex((m) => m.id === movie.id)
   );
+
+  const PAGE_SIZE = 40;
+
 
   const isLoggedIn = !!userId;
 
@@ -32,19 +40,26 @@ export default function Home() {
   // Fetch movies from Supabase
   useEffect(() => {
     const fetchMovies = async () => {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
       const { data, error } = await supabase
         .from('movies')
         .select('*')
         .order('popularity', { ascending: false })
-        .limit(50);
+        .range(from, to);
         
         console.log('Fetched movies:', data);
 
-    if (error) setError(error.message);
-    else setMovies(data || []);
-  };
-  fetchMovies();
-  }, []);
+      if (error) {
+        setError(error.message);
+      } else {
+        setMovies((prev) => [...prev, ...(data || [])]);
+      }
+    };
+
+    fetchMovies();
+  }, [page]);
 
   // Load all existing ratings on pageload
   useEffect(() => {
@@ -113,59 +128,22 @@ export default function Home() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
         {unratedMovies.map((movie) => (
-          <div
-            key={movie.id}
-            className="border rounded-lg overflow-hidden bg-gray-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
-          >
-            <div className='relative group'>
-              {movie.poster_path ? (
-                <Image
-                  src={`${POSTER_BASE}${movie.poster_path}`}
-                  alt={movie.title}
-                  width={500}
-                  height={750}
-                  className="w-full h-auto"
-                />
-              ) : (
-                <div className="bg-gray-200 w-full h-80 flex items-center justify-center">
-                  No Poster
-                </div>
-              )}
-
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-            </div>
-
-            <div className="p-4">
-              <h2 className="font-semibold text-lg">{movie.title}</h2>
-              <p className="text-sm text-gray-500">
-                {movie.release_date ? movie.release_date.slice(0, 4) : "N/A"}
-              </p>
-
-              <StarRating
-                value={ratings[movie.id] ?? null}
-                onChange={(val) => handleRate(movie.id, val)}
-                disabled = {!isLoggedIn}
-              />
-                    
-              <p className="text-sm text-gray-600 mt-1">
-                {ratings[movie.id]
-                  ? `${ratings[movie.id].toFixed(1)} / 5.0`
-                  : 'Not rated'}
-              </p>
-
-              {/* When not logged in */}
-              {!userId && (
-                <p className="text-xs text-gray-400 mt-1">
-                  Sign in to rate and get recommendations
-                </p>
-              )}
-
-            </div>
-          </div>
+          <MovieCard
+              key={movie.id}
+              movie={movie}
+              rating={ratings[movie.id]}
+              isLoggedIn={isLoggedIn}
+              onRate={(value) => handleRate(movie.id, value)}
+            />
         ))}
       </div>
+
+      <button
+        onClick={() => setPage((p) => p + 1)}
+        className="mt-10 mx-auto block px-6 py-3 bg-white text-black rounded font-semibold hover:bg-gray-200"
+      >
+        Load more movies
+      </button>
     </main>
   );
 }

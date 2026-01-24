@@ -30,8 +30,55 @@ def fetch_popular_movies(page=1):
     res.raise_for_status()
     return res.json()["results"]
 
+def fetch_top_rated_movies(page=1):
+    res = requests.get(
+        f"{BASE_URL}/movie/top_rated",
+        params={"api_key": TMDB_API_KEY, "language": "en-US", "page": page},
+    )
+    res.raise_for_status()
+    return res.json()["results"]
 
 
+def fetch_movies_by_genre(genre_id, page=1):
+    res = requests.get(
+        f"{BASE_URL}/discover/movie",
+        params={
+            "api_key": TMDB_API_KEY,
+            "with_genres": genre_id,
+            "page": page,
+            "sort_by": "popularity.desc"
+        }
+    )
+    res.raise_for_status()
+    return res.json()["results"]
+
+def ingest_movie_batch(movies):
+    for movie in movies:
+        data = {
+            "tmdb_id": movie["id"],
+            "title": movie.get("title"),
+            "overview": movie.get("overview"),
+            "poster_path": movie.get("poster_path"),
+            "release_date": movie.get("release_date") or None,
+            "popularity": movie.get("popularity", 0),
+            "genres": [genre_map.get(gid) for gid in movie.get("genre_ids", [])]
+        }
+        supabase.table("movies").upsert(
+            data,
+            on_conflict="tmdb_id"
+        ).execute()
+
+def ingest_all():
+    for page in range(4, 31):
+        ingest_movie_batch(fetch_top_rated_movies(page))
+        print(f"Top rated page {page}")
+
+    # Genre-based discovery
+    for genre_id in genre_map.keys():
+        for page in range(1, 11):
+            ingest_movie_batch(fetch_movies_by_genre(genre_id, page))
+        print(f"Genre {genre_id} done")
+        
 # Step 3: Ingest movies into Supabase
 def ingest_movies(pages=5):
     for page in range(1, pages + 1):
@@ -49,5 +96,6 @@ def ingest_movies(pages=5):
             supabase.table("movies").upsert(data, on_conflict="tmdb_id").execute()
         print(f"Page {page} ingested")
 
+
 if __name__ == "__main__":
-    ingest_movies(pages=5)
+    ingest_all()

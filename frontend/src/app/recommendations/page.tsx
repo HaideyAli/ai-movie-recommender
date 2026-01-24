@@ -1,57 +1,102 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-
-type Movie = {
-  id: number;
-  title: string;
-  overview: string;
-  poster_path?: string;
-};
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import MovieCard from '@/components/MovieCard';
+import { Movie } from '@/types/movie';
 
 export default function RecommendationsPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // TEMP: hardcode user id for now
-  const userId = "b154115c-30f5-4933-8611-9de0c84becf7";
-
+  // Fetch user
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/recommendations/${userId}`)
-      .then(res => res.json())
-      .then(data => {
-        setMovies(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+    });
   }, []);
 
-  if (loading) return <p>Loading recommendations...</p>;
+  // Fetch recommendations
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchRecommendations = async () => {
+      try {
+        const res = await fetch(
+          `http://127.0.0.1:8000/recommendations/${userId}`
+        );
+
+        if (!res.ok) {
+          throw new Error('Failed to fetch recommendations');
+        }
+
+        const data = await res.json();
+
+        // Defensive check (important)
+        if (!Array.isArray(data)) {
+          throw new Error('Recommendations response is not an array');
+        }
+
+        setMovies(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, [userId]);
+
+  if (!userId) {
+    return (
+      <p className="text-center mt-10 text-gray-400">
+        Please sign in to see recommendations
+      </p>
+    );
+  }
+
+  if (loading) {
+    return (
+      <p className="text-center mt-10 text-gray-400">
+        Loading recommendations...
+      </p>
+    );
+  }
+
+  if (error) {
+    return (
+      <p className="text-center mt-10 text-red-500">
+        {error}
+      </p>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Recommended for you</h1>
+    <main className="p-8 max-w-7xl mx-auto">
+      <h1 className="text-4xl font-extrabold text-center mb-8">
+        Recommended For You
+      </h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {movies.map(movie => (
-          <div key={movie.id} className="border rounded p-3">
-            {movie.poster_path && (
-              <img
-                src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                alt={movie.title}
-                className="rounded mb-2"
-              />
-            )}
-            <h2 className="font-semibold">{movie.title}</h2>
-            <p className="text-sm text-gray-600 line-clamp-4">
-              {movie.overview}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
+      {movies.length === 0 ? (
+        <p className="text-center text-gray-400">
+          Rate more movies to improve recommendations 🎬
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {movies.map((movie) => (
+            <MovieCard
+              key={movie.id}
+              movie={movie}
+              rating={undefined}     // no preloaded rating yet
+              isLoggedIn={true}
+              onRate={() => {}}      // optional for now
+            />
+          ))}
+        </div>
+      )}
+    </main>
   );
 }
