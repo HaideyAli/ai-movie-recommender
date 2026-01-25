@@ -94,7 +94,9 @@ export default function RecommendationsPage() {
               isLoggedIn={true}
               onRate={() => {}}      // optional for now
             />
+            
           ))}
+          
         </div>
       )}
     </main>

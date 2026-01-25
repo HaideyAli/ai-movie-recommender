@@ -56,6 +56,13 @@ export default function MovieCard({
           {rating ? `${rating.toFixed(1)} / 5.0` : 'Not rated'}
         </p>
 
+        {movie.likelihood !== undefined && (
+          <p className="text-xs text-green-400 mt-1">
+            {movie.likelihood}% match
+
+          </p>
+        )}
+
         {!isLoggedIn && (
           <p className="text-xs text-gray-400 mt-1">
             Sign in to rate and get recommendations

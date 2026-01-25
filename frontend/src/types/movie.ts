@@ -7,4 +7,5 @@ export type Movie = {
   release_date: string | null;
   genres: string[];
   popularity: number | null;
+  likelihood?: number;
 };
