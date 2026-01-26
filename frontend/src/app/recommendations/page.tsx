@@ -4,12 +4,23 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import MovieCard from '@/components/MovieCard';
 import { Movie } from '@/types/movie';
+import { useRouter } from 'next/navigation';
 
 export default function RecommendationsPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.push('/login');
+      }
+    });
+  }, [router]);
 
   // Fetch user
   useEffect(() => {
@@ -49,7 +60,7 @@ export default function RecommendationsPage() {
 
     fetchRecommendations();
   }, [userId]);
-
+  
   if (!userId) {
     return (
       <p className="text-center mt-10 text-gray-400">

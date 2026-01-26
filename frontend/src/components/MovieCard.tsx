@@ -13,6 +13,8 @@ type MovieCardProps = {
   onRate: (value: number) => void;
 };
 
+
+
 export default function MovieCard({
   movie,
   rating,

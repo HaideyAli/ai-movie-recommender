@@ -4,14 +4,14 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
+  const handleSignup = async () => {
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -25,7 +25,7 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-sm mx-auto mt-20">
-      <h1 className="text-2xl font-bold mb-4">Log in</h1>
+      <h1 className="text-2xl font-bold mb-4">Create account</h1>
 
       <input
         className="w-full p-2 mb-2"
@@ -44,16 +44,16 @@ export default function LoginPage() {
 
       <button
         className="w-full bg-blue-600 text-white p-2 mt-2"
-        onClick={handleLogin}
+        onClick={handleSignup}
       >
-        Log In
+        Sign Up
       </button>
 
         <p className="text-sm text-gray-500">
-          Don’t have an account?{' '}
-          <a href="/signup" className="underline">
-            Sign up
-          </a>
+            Already have an account?{' '}
+            <a href="/login" className="underline">
+            Log in
+            </a>
         </p>
     </div>
   );
