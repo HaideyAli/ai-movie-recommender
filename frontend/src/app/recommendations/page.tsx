@@ -11,6 +11,8 @@ export default function RecommendationsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+
 
   const router = useRouter();
 
@@ -63,51 +65,103 @@ export default function RecommendationsPage() {
   
   if (!userId) {
     return (
-      <p className="text-center mt-10 text-gray-400">
-        Please sign in to see recommendations
-      </p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+        <p className="text-xl font-medium text-zinc-400 tracking-tight">
+          Please sign in to see recommendations
+        </p>
+      </div>
     );
   }
 
   if (loading) {
     return (
-      <p className="text-center mt-10 text-gray-400">
-        Loading recommendations...
-      </p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+        <p className="text-zinc-400 font-medium tracking-tight">Curating your list...</p>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <p className="text-center mt-10 text-red-500">
-        {error}
-      </p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+        <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
+          <p className="text-red-400 font-medium">{error}</p>
+        </div>
+      </div>
     );
   }
 
+
+  // Handle user rating click
+  const handleRate = async (movieId: string, value: number) => {
+    console.log('Rating click', { movieId, value });
+  
+    setRatings((prev) => ({ ...prev, [movieId]: value }));
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert('You must be logged in to rate movies');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('ratings')
+      .upsert(
+        {
+          user_id: user.id,
+          movie_id: movieId,
+          rating: value,
+        },
+        {
+          onConflict: 'user_id,movie_id',
+        }
+      );
+
+    if (error) {
+      console.error('Rating error:', error.message);
+    }
+
+    setMovies((prev) => prev.filter((m) => m.id !== movieId));
+
+  };
+
   return (
-    <main className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-extrabold text-center mb-8">
-        Recommended For You
-      </h1>
+    <main className="p-8 max-w-7xl mx-auto min-h-screen">
+      <header className="mb-12 text-center">
+        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-3">
+          Recommended For You
+        </h1>
+        <p className="text-zinc-400 max-w-lg mx-auto">
+          Based on your taste, we think you'll love these titles.
+        </p>
+      </header>
 
       {movies.length === 0 ? (
-        <p className="text-center text-gray-400">
-          Rate more movies to improve recommendations 🎬
-        </p>
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-12 text-center backdrop-blur-sm">
+          <span className="text-4xl mb-4 block">🎬</span>
+          <p className="text-zinc-300 text-lg font-medium tracking-tight">
+            More ratings = Better picks.
+          </p>
+          <p className="text-zinc-500 mt-2 text-sm">
+            Rate a few more movies to help our engine find your style.
+          </p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
           {movies.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              rating={undefined}     // no preloaded rating yet
-              isLoggedIn={true}
-              onRate={() => {}}      // optional for now
-            />
-            
+            <div key={movie.id} className="transition-transform duration-300 hover:scale-[1.02]">
+              <MovieCard
+                movie={movie}
+                rating={ratings[movie.id]}
+                isLoggedIn={true}
+                onRate={(value) => {handleRate(movie.id, value)}}
+              />
+            </div>
           ))}
-          
         </div>
       )}
     </main>

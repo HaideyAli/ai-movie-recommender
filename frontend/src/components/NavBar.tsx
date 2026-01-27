@@ -35,9 +35,9 @@ export default function Navbar() {
         {/* Left */}
         <Link
           href="/"
-          className="text-xl font-extrabold tracking-tight"
+          className="text-xl font-bold tracking-tight"
         >
-          🎬 MovieMind
+          🎬 Flick Finder
         </Link>
 
         {/* Right */}

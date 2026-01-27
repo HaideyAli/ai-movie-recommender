@@ -230,11 +230,7 @@ def get_recommendations(user_id: str):
                 movie["likelihood"] = r["likelihood"]
                 final_results.append(movie)
 
-        for r in final_results[:50]:
-            print(r["title"], r["likelihood"])
-
         return final_results
-
 
     except Exception as e:
         print("ERROR:", e)
