@@ -38,7 +38,7 @@ export default function RecommendationsPage() {
     const fetchRecommendations = async () => {
       try {
         const res = await fetch(
-          `http://127.0.0.1:8000/recommendations/${userId}`
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/recommendations/${userId}`
         );
 
         if (!res.ok) {

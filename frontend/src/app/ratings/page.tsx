@@ -10,7 +10,8 @@ const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 
 type RatedMovie = {
   rating: number;
-  movies: Movie;
+  movies: Movie[]; // array, because Supabase returns it this way
+
 };
 
 export default function RatingsPage() {
@@ -98,46 +99,53 @@ export default function RatingsPage() {
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {ratedMovies.map(({ rating, movies }) => (
-            <div
-              key={movies.id}
-              className="border rounded-lg overflow-hidden bg-gray-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
-            >
-              <div className="relative">
-                {movies.poster_path ? (
-                  <Image
-                    src={`${POSTER_BASE}${movies.poster_path}`}
-                    alt={movies.title}
-                    width={500}
-                    height={750}
-                    className="w-full h-auto"
+          {ratedMovies.map(({ rating, movies }) => {
+            const movie = movies[0];
+            if (!movie) return null;
+
+            return (
+              <div
+                key={movie.id}
+                className="border rounded-lg overflow-hidden bg-gray-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+              >
+                <div className="relative">
+                  {movie.poster_path ? (
+                    <Image
+                      src={`${POSTER_BASE}${movie.poster_path}`}
+                      alt={movie.title}
+                      width={500}
+                      height={750}
+                      className="w-full h-auto"
+                    />
+                  ) : (
+                    <div className="bg-gray-200 w-full h-80 flex items-center justify-center">
+                      No Poster
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4">
+                  <h2 className="font-semibold text-lg">
+                    {movie.title}
+                  </h2>
+
+                  <p className="text-sm text-gray-500">
+                    {movie.release_date?.slice(0, 4) ?? 'N/A'}
+                  </p>
+
+                  <StarRating
+                    value={rating}
+                    onChange={(val) => handleRate(movie.id, val)}
                   />
-                ) : (
-                  <div className="bg-gray-200 w-full h-80 flex items-center justify-center">
-                    No Poster
-                  </div>
-                )}
+
+                  <p className="text-sm text-yellow-500 mt-1 font-medium">
+                    {rating.toFixed(1)} / 5.0
+                  </p>
+                </div>
               </div>
+            );
+          })}
 
-              <div className="p-4">
-                <h2 className="font-semibold text-lg">
-                  {movies.title}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {movies.release_date?.slice(0, 4) ?? 'N/A'}
-                </p>
-
-                <StarRating
-                  value={rating}
-                  onChange={(val) => handleRate(movies.id, val)}
-                />
-
-                <p className="text-sm text-yellow-500 mt-1 font-medium">
-                  {rating.toFixed(1)} / 5.0
-                </p>
-              </div>
-            </div>
-          ))}
         </div>
       )}
     </main>
