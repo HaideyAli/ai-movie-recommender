@@ -13,3 +13,13 @@ app.add_middleware(
 )
 
 app.include_router(recommendations_router, prefix="/recommendations")
+
+# ---- RUN FASTAPI ----
+if __name__ == "__main__":
+    import uvicorn
+
+    # Railway provides PORT in env variables
+    port = int(os.environ.get("PORT", 8000))
+
+    # host=0.0.0.0 is necessary for cloud deployment
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
