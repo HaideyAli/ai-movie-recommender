@@ -54,7 +54,7 @@ export default function RatingsPage() {
 
     setRatedMovies((prev) =>
       prev.map((row) =>
-        row.movies.id === movieId
+        row.movies[0]?.id === movieId
           ? { ...row, rating: value }
           : row
       )
