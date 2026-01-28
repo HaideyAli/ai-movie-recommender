@@ -83,7 +83,7 @@ export default function RatingsPage() {
 
   return (
     <main className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-extrabold text-center mb-2">
+      <h1 className="text-4xl font-bold text-center mb-2">
         Your Ratings
       </h1>
       <p className="text-center text-gray-500 mb-8">

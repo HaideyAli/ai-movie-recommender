@@ -58,6 +58,15 @@ export default function Navbar() {
             </Link>
           )}
 
+          {user && (
+            <Link
+              href="/ratings"
+              className="text-gray-300 hover:text-white transition"
+            >
+              Your Ratings
+            </Link>
+          )}
+
           {!user ? (
             <Link
               href="/login"
