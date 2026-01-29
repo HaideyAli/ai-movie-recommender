@@ -1,27 +1,32 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from recommendations import router as recommendations_router
+from supabase import create_client
+from dotenv import load_dotenv
+
+load_dotenv()
+
 app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"status": "ok"}
+# CORS setup
+origins = [
+    "http://localhost:3000",
+    "https://flick-finder-green.vercel.app"
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # can restrict to origins list if you want
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(recommendations_router, prefix="/recommendations")
-
-
-# Global variable for Supabase client
+# Global Supabase client placeholder
 supabase = None
 
-# ✅ Startup event
+# Startup event to initialize Supabase
 @app.on_event("startup")
 def startup_event():
     global supabase
@@ -32,4 +37,13 @@ def startup_event():
         raise RuntimeError("Missing Supabase credentials")
 
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    print("Supabase client initialized successfully")
+    print("✅ Supabase client initialized successfully")
+
+# Include router
+app.include_router(recommendations_router, prefix="/recommendations")
+
+# Run locally
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
