@@ -16,7 +16,16 @@ SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("Missing Supabase credentials")
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("ERROR: Missing Supabase credentials")
+    raise RuntimeError("Missing Supabase credentials")
+
+try:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    print("Supabase client initialized successfully")
+except Exception as e:
+    print("ERROR initializing Supabase client:", e)
+    raise
 
 def compute_final_score(similarity, popularity, genre_overlap):
     # Normalize popularity (log-scaled)
@@ -81,6 +90,8 @@ def enjoyment_probability(score):
 @router.get("/{user_id}")
 def get_recommendations(user_id: str):
     try:
+        print("Fetching ratings for user:", user_id)
+
         #Fetch ratings
         all_ratings = supabase.table("ratings") \
             .select("movie_id, rating") \
@@ -233,5 +244,5 @@ def get_recommendations(user_id: str):
         return final_results
 
     except Exception as e:
-        print("ERROR:", e)
+        print("ERROR in get_recommendations:", e)
         raise HTTPException(status_code=500, detail=str(e))
