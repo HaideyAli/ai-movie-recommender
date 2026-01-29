@@ -89,6 +89,10 @@ def enjoyment_probability(score):
 
 @router.get("/{user_id}")
 def get_recommendations(user_id: str):
+    print("=== HIT RECOMMENDATIONS ENDPOINT ===")
+    print("User ID:", user_id)
+
+
     try:
         print("Fetching ratings for user:", user_id)
 
@@ -97,6 +101,8 @@ def get_recommendations(user_id: str):
             .select("movie_id, rating") \
             .eq("user_id", user_id) \
             .execute().data
+        
+        print("STEP 2 - Ratings fetched:", len(all_ratings))
 
         if not all_ratings:
             return []
@@ -105,6 +111,7 @@ def get_recommendations(user_id: str):
 
         user_genre_weights = {}
 
+        print("STEP 3 - Fetching genres")
         rated_movies = supabase.table("movies") \
             .select("id, genres") \
             .in_("id", all_rated_movie_ids) \
@@ -127,6 +134,8 @@ def get_recommendations(user_id: str):
         if not positive_ratings:
             return []
 
+
+        print("STEP 4 - Fetching embeddings")
         # 2. Fetch embeddings for rated movies
         embeddings = supabase.table("movie_embeddings") \
             .select("movie_id, embedding") \
@@ -151,7 +160,7 @@ def get_recommendations(user_id: str):
                 movie_embeddings.append(embedding_map[movie_id])
                 aligned_ratings.append(r["rating"])
 
-
+        print("STEP 5 - Building user vector")
         # 3. Average embedding (user taste vector)
         user_vector = build_user_vector(
             movie_embeddings,
@@ -166,6 +175,7 @@ def get_recommendations(user_id: str):
         matches = None
         try:
             print("User vector: ", user_vector)
+            print("STEP 6 - Running RPC")
             matches = supabase.rpc(
                 "match_movies",
                 {"query_embedding": user_vector, "match_count": 150}
@@ -186,8 +196,11 @@ def get_recommendations(user_id: str):
             if m["movie_id"] not in all_rated_movie_ids
         ]
 
+        print("STEP 7 - Matches returned:", len(matches))
+
         candidate_ids = [m["movie_id"] for m in matches]
 
+        print("STEP 8 - Fetching movie metadata")
         movie_metadata = supabase.table("movies") \
             .select("id, popularity, genres") \
             .in_("id", candidate_ids) \
@@ -248,6 +261,7 @@ def get_recommendations(user_id: str):
                 movie["likelihood"] = r["likelihood"]
                 final_results.append(movie)
 
+        print("STEP 9 - Returning results")
         return final_results
 
     except Exception as e:
