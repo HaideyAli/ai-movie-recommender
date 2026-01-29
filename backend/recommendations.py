@@ -170,6 +170,7 @@ def get_recommendations(user_id: str):
         if not user_vector:
             return []
 
+        print("STEP A - before RPC")
 
         # 4. Vector similarity search
         matches = None
@@ -184,6 +185,8 @@ def get_recommendations(user_id: str):
         except Exception as e:
             print("RPC error:", e)
             raise
+
+        print("STEP B - after RPC")
 
         if not matches:
             print("No matches found")
