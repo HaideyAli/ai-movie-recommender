@@ -52,12 +52,18 @@ export default function RatingsPage() {
   const handleRate = async (movieId: string, value: number) => {
     if (!userId) return;
 
+    // Inside handleRate function in ratings/page.tsx
+
     setRatedMovies((prev) =>
-      prev.map((row) =>
-        row.movies[0]?.id === movieId
-          ? { ...row, rating: value }
-          : row
-      )
+      prev.map((row) => {
+        // Safely get the movie ID whether it's an array or a single object
+        const movie = Array.isArray(row.movies) ? row.movies[0] : row.movies;
+        const isTargetMovie = movie?.id === movieId;
+
+        return isTargetMovie 
+          ? { ...row, rating: value } 
+          : row;
+      })
     );
 
     await supabase
