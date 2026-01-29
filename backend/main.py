@@ -1,11 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from recommendations import router as recommendations_router
-
 app = FastAPI()
 
 @app.get("/")
-def health():
+def root():
     return {"status": "ok"}
 
 app.add_middleware(
