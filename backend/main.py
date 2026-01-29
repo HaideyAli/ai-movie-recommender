@@ -4,6 +4,10 @@ from recommendations import router as recommendations_router
 
 app = FastAPI()
 
+@app.get("/")
+def health():
+    return {"status": "ok"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
