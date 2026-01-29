@@ -163,13 +163,20 @@ def get_recommendations(user_id: str):
 
 
         # 4. Vector similarity search
-        matches = supabase.rpc(
-            "match_movies",
-            {
-                "query_embedding": user_vector,
-                "match_count": 150
-            }
-        ).execute().data
+        matches = None
+        try:
+            print("User vector: ", user_vector)
+            matches = supabase.rpc(
+                "match_movies",
+                {"query_embedding": user_vector, "match_count": 150}
+            ).execute().data
+            print("RPC matches:", matches)
+        except Exception as e:
+            print("RPC error:", e)
+            raise
+
+        if not matches:
+            print("No matches found")
 
         if not matches:
             return []
