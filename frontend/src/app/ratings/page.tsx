@@ -8,10 +8,10 @@ import { Movie } from '@/types/movie';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 
+// Define exactly what the join looks like
 type RatedMovie = {
   rating: number;
-  movies: Movie[]; // array, because Supabase returns it this way
-
+  movies: Movie | Movie[]; // This handles the Supabase "nesting" variance
 };
 
 export default function RatingsPage() {
@@ -99,13 +99,16 @@ export default function RatingsPage() {
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {ratedMovies.map(({ rating, movies }) => {
-            const movie = movies[0];
+          {ratedMovies.map((item, index) => {
+            // Use a type guard to safely extract the movie
+            const movie = Array.isArray(item.movies) ? item.movies[0] : item.movies;
+            
+            // If no movie is found in the join, skip rendering
             if (!movie) return null;
 
             return (
               <div
-                key={movie.id}
+                key={`${movie.id}-${index}`}
                 className="border rounded-lg overflow-hidden bg-gray-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
               >
                 <div className="relative">
@@ -134,12 +137,12 @@ export default function RatingsPage() {
                   </p>
 
                   <StarRating
-                    value={rating}
+                    value={item.rating}
                     onChange={(val) => handleRate(movie.id, val)}
                   />
 
                   <p className="text-sm text-yellow-500 mt-1 font-medium">
-                    {rating.toFixed(1)} / 5.0
+                    {item.rating.toFixed(1)} / 5.0
                   </p>
                 </div>
               </div>
