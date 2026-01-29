@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from supabase import create_client
 from dotenv import load_dotenv
+from main import supabase
 import os
 import numpy as np
 import ast
@@ -9,23 +10,6 @@ import math
 load_dotenv()
 
 router = APIRouter()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError("Missing Supabase credentials")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("ERROR: Missing Supabase credentials")
-    raise RuntimeError("Missing Supabase credentials")
-
-try:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    print("Supabase client initialized successfully")
-except Exception as e:
-    print("ERROR initializing Supabase client:", e)
-    raise
 
 def compute_final_score(similarity, popularity, genre_overlap):
     # Normalize popularity (log-scaled)
@@ -89,6 +73,9 @@ def enjoyment_probability(score):
 
 @router.get("/{user_id}")
 def get_recommendations(user_id: str):
+    if supabase is None:
+        raise HTTPException(status_code=500, detail="Supabase client not initialized")
+
     print("=== HIT RECOMMENDATIONS ENDPOINT ===")
     print("User ID:", user_id)
 
