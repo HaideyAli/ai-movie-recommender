@@ -12,8 +12,8 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "My App",
-  description: "Clean UI",
+  title: "Flick Finder",
+  description: "AI-powered movie discovery app that generates personalized recommendations based on user ratings, embeddings, and taste similarity.",
 };
 
 export default function RootLayout({
