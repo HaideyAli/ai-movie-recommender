@@ -5,12 +5,14 @@ from recommendations import router as recommendations_router
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+    "https://flick-finder-green.vercel.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://flick-finder-green.vercel.app"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
