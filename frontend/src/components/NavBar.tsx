@@ -37,7 +37,7 @@ export default function Navbar() {
           href="/"
           className="text-xl font-bold tracking-tight"
         >
-          🎬 Flick Finder
+          Flick Finder
         </Link>
 
         {/* Right */}
