@@ -21,6 +21,7 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "https://flick-finder-green.vercel.app",
+    "https://flickfinder.app"
 ]
 
 app.add_middleware(
