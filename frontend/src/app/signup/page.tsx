@@ -9,6 +9,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -19,15 +20,23 @@ export default function SignupPage() {
   }, [router]);
 
   const handleSignup = async () => {
+    setError(null);
+    setSuccess(null);
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: 'https://flickfinder.app/login',
+      },
     });
 
     if (error) {
       setError(error.message);
     } else {
-      router.push('/recommendations');
+      setSuccess(
+        'Account created! Please check your email to confirm your account.'
+      );
     }
   };
 
@@ -63,8 +72,15 @@ export default function SignupPage() {
             </div>
           )}
 
+          {success && (
+            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+              <p className="text-sm text-green-400">{success}</p>
+            </div>
+          )}
+
           <button
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] mt-4"
+            disabled={!!success}
+            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] mt-4"
             onClick={handleSignup}
           >
             Create Account
@@ -72,7 +88,10 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-zinc-400 mt-6">
             Already have an account?{' '}
-            <a href="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+            <a
+              href="/login"
+              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+            >
               Log in
             </a>
           </p>
